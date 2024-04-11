@@ -1,5 +1,13 @@
 # XLA
 
+## How to run our cost model work?
+1. Follow [the guide](https://github.com/psenta/xla/blob/main/docs/developer_guide.md) to build XLA
+2. Run the following command
+```bash
+sudo docker exec -it $CONTAINER_NAME bazel run //xla/service/gpu/model:gpu_cost_model_stats_collection_test
+```
+Note change `$CONTAINER_NAME` to be the container you build XLA.
+
 XLA (Accelerated Linear Algebra) is an open-source machine learning (ML)
 compiler for GPUs, CPUs, and ML accelerators.
 
