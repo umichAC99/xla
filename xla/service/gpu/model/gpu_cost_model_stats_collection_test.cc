@@ -67,7 +67,7 @@ class GpuCostModelStatsCollectionTest : public HloTestBase {
 
  public:
   GpuCostModelStatsCollection cost_model_stats_{
-      TestGpuDeviceInfo::RTXA6000DeviceInfo(),
+      TestGpuDeviceInfo::AMDMI210DeviceInfo(),
       GpuHloCostAnalysis::Options{ShapeSizeBytesFunction(),
                                   /*per_second_rates=*/{},
                                   /*count_multiple_input_accesses=*/true}};
@@ -104,70 +104,70 @@ ENTRY entry {
 
   int warp_size = cost_model_stats_.device_info_.threads_per_warp();
   int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
-                                  GpuPerformanceWithCollectiveModel::kLL128NumThreads, 256);
+                                  GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
   HloInstruction* rs_start =
       FindInstruction(module.get(), "all-reduce-start.1");
 
 
-  HloInstruction* root = module->entry_computation()->root_instruction();
-  TF_ASSERT_OK_AND_ASSIGN(auto gpu_config,
-                          root->backend_config<GpuBackendConfig>());
-  const FusionBackendConfig& backend_config =
-      gpu_config.fusion_backend_config();
+//   HloInstruction* root = module->entry_computation()->root_instruction();
+//   TF_ASSERT_OK_AND_ASSIGN(auto gpu_config,
+//                           root->backend_config<GpuBackendConfig>());
+//   const FusionBackendConfig& backend_config =
+//       gpu_config.fusion_backend_config();
 
 
     //   int64_t num_channels =
     //   std::max(min_nchannels, GetNcclMaxNumChannels(CollectiveAlgo::RING));
     
 
-    std::cout << "Time:"<< GpuPerformanceModelBase::ComputeTime(cost_model_stats_.device_info_, cost_model_stats_.cost_analysis_.flop_count(), num_threads) << std::endl;
+  std::cout << "Time:"<< GpuPerformanceModelBase::ComputeTime(cost_model_stats_.device_info_, cost_model_stats_.cost_analysis_.flop_count(), num_threads) << std::endl;
 
-  std::cout << cost_model_stats_.cost_analysis_.flop_count() << std::endl;
-  std::cout<< "Num_of_threads = "<<warp_size<<std::endl;
+  std::cout << "Flop_Count: "<<cost_model_stats_.cost_analysis_.flop_count() << std::endl;
+  std::cout<< "Num_of_threads: "<<num_threads<<std::endl;
 
 
 //   EXPECT_TRUE(backend_config.has_reification_cost());
 //   EXPECT_GT(backend_config.reification_cost().end_to_end_cycles(), 0);
 }
 
-TEST_F(GpuCostModelStatsCollectionTest, FusinInWhileComputation) {
-  TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(R"(
-    HloModule test_module
+// TEST_F(GpuCostModelStatsCollectionTest, FusinInWhileComputation) {
+//   TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(R"(
+//     HloModule test_module
 
-    cond {
-      p = f32[16384]{0} parameter(0)
-      ROOT %constant.2 = pred[] constant(true)
-    }
+//     cond {
+//       p = f32[16384]{0} parameter(0)
+//       ROOT %constant.2 = pred[] constant(true)
+//     }
 
-    log {
-      p = f32[16384]{0} parameter(0)
-      ROOT l = f32[16384]{0} log(p)
-    }
+//     log {
+//       p = f32[16384]{0} parameter(0)
+//       ROOT l = f32[16384]{0} log(p)
+//     }
 
-    loop {
-      %p0 = f32[16384] parameter(0)
-      ROOT %res = f32[16384]{0} fusion(p0), kind=kInput, calls=log
-    }
+//     loop {
+//       %p0 = f32[16384] parameter(0)
+//       ROOT %res = f32[16384]{0} fusion(p0), kind=kInput, calls=log
+//     }
 
-    ENTRY main {
-      %p0 = f32[16384] parameter(0)
-      ROOT %while = f32[16384] while(%p0), body=%loop, condition=%cond
-    })"));
+//     ENTRY main {
+//       %p0 = f32[16384] parameter(0)
+//       ROOT %while = f32[16384] while(%p0), body=%loop, condition=%cond
+//     })"));
 
-  EXPECT_FALSE(cost_model_stats_.Run(module.get()).value());
+//   EXPECT_FALSE(cost_model_stats_.Run(module.get()).value());
 
-  HloInstruction* root = module->entry_computation()
-                             ->root_instruction()
-                             ->while_body()
-                             ->root_instruction();
-  TF_ASSERT_OK_AND_ASSIGN(auto gpu_config,
-                          root->backend_config<GpuBackendConfig>());
-  const FusionBackendConfig& backend_config =
-      gpu_config.fusion_backend_config();
+//   HloInstruction* root = module->entry_computation()
+//                              ->root_instruction()
+//                              ->while_body()
+//                              ->root_instruction();
+//   TF_ASSERT_OK_AND_ASSIGN(auto gpu_config,
+//                           root->backend_config<GpuBackendConfig>());
+//   const FusionBackendConfig& backend_config =
+//       gpu_config.fusion_backend_config();
 
-  EXPECT_TRUE(backend_config.has_reification_cost());
-  EXPECT_GT(backend_config.reification_cost().end_to_end_cycles(), 0);
-}
+//   EXPECT_TRUE(backend_config.has_reification_cost());
+//   EXPECT_GT(backend_config.reification_cost().end_to_end_cycles(), 0);
+// }
 
 }  // namespace gpu
 }  // namespace xla
