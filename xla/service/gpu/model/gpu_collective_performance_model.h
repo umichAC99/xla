@@ -116,7 +116,7 @@ class GpuPerformanceWithCollectiveModel : public GpuPerformanceModelBase {
   // If not, we will use PCIE bandwidth to estimate latency.
   static uint32_t CheckIfNvlinkSupportsP2P();
 
- private:
+//  private:
   static absl::Duration ComputeAllreduceTime(
       const HloInstruction& instr, const GpuHloCostAnalysis* cost_analysis,
       const se::DeviceDescription& gpu_device_info);

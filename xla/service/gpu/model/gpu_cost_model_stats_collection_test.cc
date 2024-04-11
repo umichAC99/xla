@@ -121,6 +121,7 @@ ENTRY entry {
     
 
   std::cout << "Time:"<< GpuPerformanceModelBase::ComputeTime(cost_model_stats_.device_info_, cost_model_stats_.cost_analysis_.flop_count(), num_threads) << std::endl;
+  std::cout << "Time:"<< GpuPerformanceWithCollectiveModel::ComputeAllreduceTime(*rs_start,&(cost_model_stats_.cost_analysis_),cost_model_stats_.device_info_) << std::endl;
 
   std::cout << "Flop_Count: "<<cost_model_stats_.cost_analysis_.flop_count() << std::endl;
   std::cout<< "Num_of_threads: "<<num_threads<<std::endl;
