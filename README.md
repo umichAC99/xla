@@ -1,5 +1,5 @@
 # XLA
-
+### TODO: Pass the correct num_threads in Compute_Time function
 ## How to run our cost model work?
 1. Follow [the guide](https://github.com/psenta/xla/blob/main/docs/developer_guide.md) to build XLA
 2. Run the following command
