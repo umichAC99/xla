@@ -16,6 +16,7 @@ limitations under the License.
 #include "xla/service/gpu/model/gpu_cost_model_stats_collection.h"
 #include "xla/service/gpu/model/gpu_collective_performance_model.h"
 #include "xla/service/gpu/model/gpu_performance_model_base.h"
+#include "xla/service/gpu/model/gpu_performance_model.h"
 #include <stdint.h>
 
 #include <memory>
@@ -109,7 +110,7 @@ ENTRY entry {
       FindInstruction(module.get(), "all-reduce-start.1");
 
 
-//   HloInstruction* root = module->entry_computation()->root_instruction();
+  HloInstruction* root = module->entry_computation()->root_instruction();
 //   TF_ASSERT_OK_AND_ASSIGN(auto gpu_config,
 //                           root->backend_config<GpuBackendConfig>());
 //   const FusionBackendConfig& backend_config =
@@ -121,8 +122,8 @@ ENTRY entry {
     
 
   std::cout << "Time:"<< GpuPerformanceModelBase::ComputeTime(cost_model_stats_.device_info_, cost_model_stats_.cost_analysis_.flop_count(), num_threads) << std::endl;
-  std::cout << "Time:"<< GpuPerformanceWithCollectiveModel::ComputeAllreduceTime(*rs_start,&(cost_model_stats_.cost_analysis_),cost_model_stats_.device_info_) << std::endl;
-
+//   std::cout << "Time:"<< GpuPerformanceWithCollectiveModel::ComputeAllreduceTime(*rs_start,&(cost_model_stats_.cost_analysis_),cost_model_stats_.device_info_) << std::endl;
+  std::cout << "Time1:" << GpuPerformanceModel::EstimateRunTimeForInstruction(rs_start, &(cost_model_stats_.cost_analysis_), GpuPerformanceModelOptions::PriorityFusion()).exec_time << std::endl;
   std::cout << "Flop_Count: "<<cost_model_stats_.cost_analysis_.flop_count() << std::endl;
   std::cout<< "Num_of_threads: "<<num_threads<<std::endl;
 
