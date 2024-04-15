@@ -42,7 +42,5 @@ os.makedirs(output_directory, exist_ok=True)  # Create the directory if it doesn
 for i, hlo in enumerate(hlo_strings):
     file_path = os.path.join(output_directory, f'hlo_output_{i}.txt')
     with open(file_path, 'w') as file:
-        file.write('R"(\n') #since Parin wanted it this way
         file.write(hlo)
-        file.write('\n)"') 
     print(f'HLO output saved to {file_path}')
