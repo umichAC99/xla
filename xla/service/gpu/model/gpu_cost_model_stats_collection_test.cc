@@ -32,6 +32,10 @@ limitations under the License.
 #include "xla/tests/hlo_test_base.h"
 #include "xla/tests/verified_hlo_module.h"
 #include "tsl/platform/statusor.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 namespace xla {
 namespace gpu {
@@ -68,38 +72,39 @@ class GpuCostModelStatsCollectionTest : public HloTestBase {
 
  public:
   GpuCostModelStatsCollection cost_model_stats_{
-      TestGpuDeviceInfo::AMDMI210DeviceInfo(),
+      TestGpuDeviceInfo::H100DeviceInfo(),
       GpuHloCostAnalysis::Options{ShapeSizeBytesFunction(),
                                   /*per_second_rates=*/{},
                                   /*count_multiple_input_accesses=*/true}};
+    std::string fileName;
 };
 
 TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
-  TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(R"(
-HloModule module, is_scheduled=true
 
-region_20.995 {
-  Arg_1.997 = f32[] parameter(1)
-  Arg_0.996 = f32[] parameter(0)
-  ROOT add.589 = f32[] add(Arg_0.996, Arg_1.997)
-}
+    // std::string fileName;
+    // if (::testing::FLAGS_gtest_filter == "--test_arg") {
+    //     if (::testing::UnitTest::GetInstance()->current_test_info()->value_param()) {
+    //         fileName = ::testing::UnitTest::GetInstance()->current_test_info()->value_param();
+    //     }
+    // }
+    std::string base_path = "/xla/xla/service/gpu/model/out.txt";
+    std::ifstream file(base_path); // Open the file
+        if (!file.is_open()) {
+            std::cerr << "Failed to open the file." << std::endl;
+        }
 
-ENTRY entry {
-  p0 = f32[16,64,256]{2,1,0} parameter(0)
-  p1 = f32[16,64,256]{2,1,0} parameter(1)
-  p2 = f32[1024,2048,2048]{2,1,0} parameter(2)
-  p3 = f32[2048,2048,2048]{2,1,0} parameter(3)
-  all-reduce-start.1 = f32[1024,2048,2048]{2,1,0} all-reduce-start(p2), channel_id=8, replica_groups={{0}}, to_apply=region_20.995, backend_config="{\"is_sync\":false}"
-  all-reduce-start.2 = f32[2048,2048,2048]{2,1,0} all-reduce-start(p3), channel_id=10, replica_groups={{0}}, to_apply=region_20.995, backend_config="{\"is_sync\":false}"
+        // Create a stringstream to hold the file contents
+        std::stringstream buffer;
+        buffer << file.rdbuf(); // Read the entire file into the stringstream
 
-  all-reduce-done.1 = f32[1024,2048,2048]{2,1,0} all-reduce-done(all-reduce-start.1)
-  all-reduce-done.2 = f32[2048,2048,2048]{2,1,0} all-reduce-done(all-reduce-start.2)
-  conv0 = f32[16,256,256]{2,1,0} convolution(p0, p1),
-    window={size=16 stride=15 lhs_dilate=16}, dim_labels=0fb_0io->0fb
+        // Convert the stringstream to a string
+        std::string fileContents = buffer.str();
 
-  ROOT tuple.2 = (f32[16,256,256]{2,1,0}, f32[1024,2048,2048]{2,1,0}, f32[2048,2048,2048]{2,1,0}) tuple(conv0, all-reduce-done.1, all-reduce-done.2)
-}
-)"));
+        // Close the file
+        file.close();
+        // std::cout << "File contents:\n" << fileContents << std::endl;
+    
+  TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(fileContents));
 
   EXPECT_FALSE(cost_model_stats_.Run(module.get()).value());
 
@@ -108,6 +113,9 @@ ENTRY entry {
                                   GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
   HloInstruction* rs_start =
       FindInstruction(module.get(), "all-reduce-start.1");
+
+  HloInstruction* producer =
+        module->entry_computation()->GetInstructionWithName("conv0");
 
 
   HloInstruction* root = module->entry_computation()->root_instruction();
@@ -123,7 +131,7 @@ ENTRY entry {
 
   std::cout << "Time:"<< GpuPerformanceModelBase::ComputeTime(cost_model_stats_.device_info_, cost_model_stats_.cost_analysis_.flop_count(), num_threads) << std::endl;
 //   std::cout << "Time:"<< GpuPerformanceWithCollectiveModel::ComputeAllreduceTime(*rs_start,&(cost_model_stats_.cost_analysis_),cost_model_stats_.device_info_) << std::endl;
-  std::cout << "Time1:" << GpuPerformanceModel::EstimateRunTimeForInstruction(rs_start, &(cost_model_stats_.cost_analysis_), GpuPerformanceModelOptions::PriorityFusion()).exec_time << std::endl;
+//   std::cout << "Time1:" << GpuPerformanceModel::EstimateRunTimeForInstruction(producer, &(cost_model_stats_.cost_analysis_), GpuPerformanceModelOptions::Default()).exec_time << std::endl;
   std::cout << "Flop_Count: "<<cost_model_stats_.cost_analysis_.flop_count() << std::endl;
   std::cout<< "Num_of_threads: "<<num_threads<<std::endl;
 
@@ -173,3 +181,20 @@ ENTRY entry {
 
 }  // namespace gpu
 }  // namespace xla
+
+// int main(int argc, char** argv) {
+//     ::testing::InitGoogleTest(&argc, argv);
+
+//     if (argc > 1 && std::string(argv[1]) == "--test_arg") {
+//         // Use the next argument as the file name
+//         if (argc > 2) {
+//             std::string fileName = argv[2];
+//             std::cout << "File Name: " << fileName << std::endl;
+//             // Use the fileName in your test
+//         } else {
+//             std::cerr << "Error: Missing file name argument." << std::endl;
+//             return 1;
+//         }
+//     }
+//     return RUN_ALL_TESTS();
+// }

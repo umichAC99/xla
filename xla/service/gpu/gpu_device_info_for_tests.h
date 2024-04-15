@@ -27,6 +27,24 @@ class TestGpuDeviceInfo {
       stream_executor::GpuComputeCapability cc =
           stream_executor::CudaComputeCapability(8, 9));
   static stream_executor::DeviceDescription AMDMI210DeviceInfo();
+  static stream_executor::DeviceDescription H100PCieDeviceInfo(
+    stream_executor::GpuComputeCapability cc =
+          stream_executor::CudaComputeCapability(8, 9));
+  static stream_executor::DeviceDescription V100SXM216GBDeviceInfo(
+    stream_executor::GpuComputeCapability cc =
+          stream_executor::CudaComputeCapability(8, 9)
+  );
+  static stream_executor::DeviceDescription H100DeviceInfo(
+    stream_executor::GpuComputeCapability cc =
+          stream_executor::CudaComputeCapability(8, 9));
+  static stream_executor::DeviceDescription A10080GBDeviceInfo(
+    stream_executor::GpuComputeCapability cc =
+          stream_executor::CudaComputeCapability(8, 3));
+  static stream_executor::DeviceDescription A10040GBDeviceInfo(
+    stream_executor::GpuComputeCapability cc =
+          stream_executor::CudaComputeCapability(8, 9));
+  
+
 };
 
 }  // namespace gpu
