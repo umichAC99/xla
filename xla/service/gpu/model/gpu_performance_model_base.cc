@@ -359,10 +359,10 @@ absl::Duration GpuPerformanceModelBase::ComputeTime(
   int64_t fpu_count =
       gpu_device_info.core_count() * gpu_device_info.fpus_per_core();
   int64_t n_threads_active = std::min(num_threads, fpu_count);
-  std::cout<< "n_threads_active: " << n_threads_active << std::endl;
+//   std::cout<< "n_threads_active: " << n_threads_active << std::endl;
   double flop_per_ns_per_fpu = gpu_device_info.clock_rate_ghz() * /*fma:*/ 2;
-  std::cout<< "flops_per_ns_per_fpu: " << flop_per_ns_per_fpu << std::endl;
-  int64_t flop_per_ns_effective = flop_per_ns_per_fpu * n_threads_active;
+//   std::cout<< "flops_per_ns_per_fpu: " << flop_per_ns_per_fpu << std::endl;
+  double flop_per_ns_effective = flop_per_ns_per_fpu * n_threads_active;
   
   return absl::Nanoseconds(1.0f * flops / flop_per_ns_effective);
 }

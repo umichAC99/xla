@@ -71,70 +71,210 @@ class GpuCostModelStatsCollectionTest : public HloTestBase {
   }
 
  public:
-  GpuCostModelStatsCollection cost_model_stats_{
+  GpuCostModelStatsCollection cost_model_stats_1{
+      TestGpuDeviceInfo::RTXA6000DeviceInfo(),
+      GpuHloCostAnalysis::Options{ShapeSizeBytesFunction(),
+                                  /*per_second_rates=*/{},
+                                  /*count_multiple_input_accesses=*/true}};
+  GpuCostModelStatsCollection cost_model_stats_2{
+      TestGpuDeviceInfo::AMDMI210DeviceInfo(),
+      GpuHloCostAnalysis::Options{ShapeSizeBytesFunction(),
+                                  /*per_second_rates=*/{},
+                                  /*count_multiple_input_accesses=*/true}};
+  GpuCostModelStatsCollection cost_model_stats_3{
+      TestGpuDeviceInfo::H100PCieDeviceInfo(),
+      GpuHloCostAnalysis::Options{ShapeSizeBytesFunction(),
+                                  /*per_second_rates=*/{},
+                                  /*count_multiple_input_accesses=*/true}};
+  GpuCostModelStatsCollection cost_model_stats_4{
       TestGpuDeviceInfo::H100DeviceInfo(),
       GpuHloCostAnalysis::Options{ShapeSizeBytesFunction(),
                                   /*per_second_rates=*/{},
                                   /*count_multiple_input_accesses=*/true}};
-    std::string fileName;
+  GpuCostModelStatsCollection cost_model_stats_5{
+      TestGpuDeviceInfo::V100SXM216GBDeviceInfo(),
+      GpuHloCostAnalysis::Options{ShapeSizeBytesFunction(),
+                                  /*per_second_rates=*/{},
+                                  /*count_multiple_input_accesses=*/true}};
+  GpuCostModelStatsCollection cost_model_stats_6{
+      TestGpuDeviceInfo::A10080GBDeviceInfo(),
+      GpuHloCostAnalysis::Options{ShapeSizeBytesFunction(),
+                                  /*per_second_rates=*/{},
+                                  /*count_multiple_input_accesses=*/true}};
+  GpuCostModelStatsCollection cost_model_stats_7{
+      TestGpuDeviceInfo::A10040GBDeviceInfo(),
+      GpuHloCostAnalysis::Options{ShapeSizeBytesFunction(),
+                                  /*per_second_rates=*/{},
+                                  /*count_multiple_input_accesses=*/true}};
+  
+  std::vector<std::string> device_names = {"a6000","amdmi210","h100_pcie","h100", "v100", "a100_80", "a100_40"};
+    
+
+    // GpuCostModelStatsCollectionTest(){
+    //     cost_model_stats_.push_back(cost_model_stats_1);
+    //     cost_model_stats_.push_back(cost_model_stats_2);
+    //     cost_model_stats_.push_back(cost_model_stats_3);
+    //     cost_model_stats_.push_back(cost_model_stats_4);
+    //     cost_model_stats_.push_back(cost_model_stats_5);
+    //     cost_model_stats_.push_back(cost_model_stats_6);
+    //     cost_model_stats_.push_back(cost_model_stats_7);
+    // }
+
 };
 
 TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
-
-    // std::string fileName;
-    // if (::testing::FLAGS_gtest_filter == "--test_arg") {
-    //     if (::testing::UnitTest::GetInstance()->current_test_info()->value_param()) {
-    //         fileName = ::testing::UnitTest::GetInstance()->current_test_info()->value_param();
-    //     }
-    // }
     std::string base_path = "/xla/xla/service/gpu/model/out.txt";
     std::ifstream file(base_path); // Open the file
         if (!file.is_open()) {
             std::cerr << "Failed to open the file." << std::endl;
         }
+        std::string firstline;
+        std::getline(file,firstline);
+        int num_layers = std::stoi(firstline);
+        // file.close();
 
-        // Create a stringstream to hold the file contents
-        std::stringstream buffer;
-        buffer << file.rdbuf(); // Read the entire file into the stringstream
+    std::string layer_hlo_strings[num_layers];
 
-        // Convert the stringstream to a string
-        std::string fileContents = buffer.str();
+    // std::ifstream file1(base_path);
+    std::string line;
+    std::getline(file,line);
+    // std::getline(file1,line);
+    std::stringstream buffer;
+    int i = 0;
+    while(std::getline(file,line)){
+        if(line == "zkn"){
+            layer_hlo_strings[i] = buffer.str();
+            i = i + 1;
+            buffer.str("");
+        }
+        else{
+            buffer << line;
+        }
+    }
+    // std::cout << layer_hlo_strings[0] << std::endl;
+    file.close();
 
-        // Close the file
-        file.close();
-        // std::cout << "File contents:\n" << fileContents << std::endl;
+    base_path = "/xla/xla/service/gpu/model/layer_times.txt";
+    std::ofstream output_file(base_path);
     
-  TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(fileContents));
+    output_file << device_names[0] + ":"<<std::endl;
+    for(int i = 0; i<num_layers; i++){
+        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        EXPECT_FALSE(cost_model_stats_1.Run(module.get()).value());
+        int warp_size = cost_model_stats_1.device_info_.threads_per_warp();
+        int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
+                                        GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
+        absl::Duration duration = GpuPerformanceModelBase::ComputeTime(cost_model_stats_1.device_info_, cost_model_stats_1.cost_analysis_.flop_count(), num_threads);
+        // double duration_double = absl::ToDoubleMicroseconds(duration);
+        std::string durationString = absl::FormatDuration(duration);
+        output_file << durationString << std::endl;
+        
+    }
+    output_file <<"zkn"<<std::endl;
 
-  EXPECT_FALSE(cost_model_stats_.Run(module.get()).value());
+    output_file << device_names[1] + ":"<<std::endl;
+    for(int i = 0; i<num_layers; i++){
+        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        EXPECT_FALSE(cost_model_stats_2.Run(module.get()).value());
+        int warp_size = cost_model_stats_2.device_info_.threads_per_warp();
+        int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
+                                        GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
+        absl::Duration duration = GpuPerformanceModelBase::ComputeTime(cost_model_stats_2.device_info_, cost_model_stats_2.cost_analysis_.flop_count(), num_threads);
+        std::string durationString = absl::FormatDuration(duration);
+        output_file << durationString << std::endl;
+    }
 
-  int warp_size = cost_model_stats_.device_info_.threads_per_warp();
-  int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
-                                  GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
-  HloInstruction* rs_start =
-      FindInstruction(module.get(), "all-reduce-start.1");
+    output_file <<"zkn"<<std::endl;
+    output_file << device_names[2] + ":"<<std::endl;
+    for(int i = 0; i<num_layers; i++){
+        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        EXPECT_FALSE(cost_model_stats_3.Run(module.get()).value());
+        int warp_size = cost_model_stats_3.device_info_.threads_per_warp();
+        int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
+                                        GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
+        absl::Duration duration = GpuPerformanceModelBase::ComputeTime(cost_model_stats_3.device_info_, cost_model_stats_3.cost_analysis_.flop_count(), num_threads);
+        std::string durationString = absl::FormatDuration(duration);
+        output_file << durationString << std::endl;    }
 
-  HloInstruction* producer =
-        module->entry_computation()->GetInstructionWithName("conv0");
+    output_file <<"zkn"<<std::endl;
+    output_file << device_names[3] + ":"<<std::endl;
+    for(int i = 0; i<num_layers; i++){
+        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        EXPECT_FALSE(cost_model_stats_4.Run(module.get()).value());
+        int warp_size = cost_model_stats_4.device_info_.threads_per_warp();
+        int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
+                                        GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
+        absl::Duration duration = GpuPerformanceModelBase::ComputeTime(cost_model_stats_4.device_info_, cost_model_stats_4.cost_analysis_.flop_count(), num_threads);
+        std::string durationString = absl::FormatDuration(duration);
+        output_file << durationString << std::endl;
+    }
+
+    output_file <<"zkn"<<std::endl;
+    output_file << device_names[4] + ":"<<std::endl;
+    for(int i = 0; i<num_layers; i++){
+        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        EXPECT_FALSE(cost_model_stats_5.Run(module.get()).value());
+        int warp_size = cost_model_stats_5.device_info_.threads_per_warp();
+        int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
+                                        GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
+        absl::Duration duration = GpuPerformanceModelBase::ComputeTime(cost_model_stats_5.device_info_, cost_model_stats_5.cost_analysis_.flop_count(), num_threads);
+        std::string durationString = absl::FormatDuration(duration);
+        output_file << durationString << std::endl;
+    }
+
+    output_file <<"zkn"<<std::endl;
+    output_file << device_names[5] + ":"<<std::endl;
+    for(int i = 0; i<num_layers; i++){
+        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        EXPECT_FALSE(cost_model_stats_6.Run(module.get()).value());
+        int warp_size = cost_model_stats_6.device_info_.threads_per_warp();
+        int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
+                                        GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
+        absl::Duration duration = GpuPerformanceModelBase::ComputeTime(cost_model_stats_6.device_info_, cost_model_stats_6.cost_analysis_.flop_count(), num_threads);
+        std::string durationString = absl::FormatDuration(duration);
+        output_file << durationString << std::endl;
+    }
+
+    output_file <<"zkn"<<std::endl;
+    output_file << device_names[6] + ":"<<std::endl;
+    for(int i = 0; i<num_layers; i++){
+        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        EXPECT_FALSE(cost_model_stats_7.Run(module.get()).value());
+        int warp_size = cost_model_stats_7.device_info_.threads_per_warp();
+        int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
+                                        GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
+        absl::Duration duration = GpuPerformanceModelBase::ComputeTime(cost_model_stats_7.device_info_, cost_model_stats_7.cost_analysis_.flop_count(), num_threads);
+        std::string durationString = absl::FormatDuration(duration);
+        output_file << durationString << std::endl;
+    }
+    output_file <<"zkn"<<std::endl;
 
 
-  HloInstruction* root = module->entry_computation()->root_instruction();
-//   TF_ASSERT_OK_AND_ASSIGN(auto gpu_config,
-//                           root->backend_config<GpuBackendConfig>());
-//   const FusionBackendConfig& backend_config =
-//       gpu_config.fusion_backend_config();
-
-
-    //   int64_t num_channels =
-    //   std::max(min_nchannels, GetNcclMaxNumChannels(CollectiveAlgo::RING));
+        
     
+  
 
-  std::cout << "Time:"<< GpuPerformanceModelBase::ComputeTime(cost_model_stats_.device_info_, cost_model_stats_.cost_analysis_.flop_count(), num_threads) << std::endl;
-//   std::cout << "Time:"<< GpuPerformanceWithCollectiveModel::ComputeAllreduceTime(*rs_start,&(cost_model_stats_.cost_analysis_),cost_model_stats_.device_info_) << std::endl;
-//   std::cout << "Time1:" << GpuPerformanceModel::EstimateRunTimeForInstruction(producer, &(cost_model_stats_.cost_analysis_), GpuPerformanceModelOptions::Default()).exec_time << std::endl;
-  std::cout << "Flop_Count: "<<cost_model_stats_.cost_analysis_.flop_count() << std::endl;
-  std::cout<< "Num_of_threads: "<<num_threads<<std::endl;
 
+ // HloInstruction* rs_start =
+        //     FindInstruction(module.get(), "all-reduce-start.1");
+
+        // HloInstruction* producer =
+        //         module->entry_computation()->GetInstructionWithName("conv0");
+
+
+        // HloInstruction* root = module->entry_computation()->root_instruction();
+        //   TF_ASSERT_OK_AND_ASSIGN(auto gpu_config,
+        //                           root->backend_config<GpuBackendConfig>());
+        //   const FusionBackendConfig& backend_config =
+        //       gpu_config.fusion_backend_config();
+
+
+            //   int64_t num_channels =
+            //   std::max(min_nchannels, GetNcclMaxNumChannels(CollectiveAlgo::RING));
+        //   std::cout << "Time:"<< GpuPerformanceWithCollectiveModel::ComputeAllreduceTime(*rs_start,&(cost_model_stats_.cost_analysis_),cost_model_stats_.device_info_) << std::endl;
+        //   std::cout << "Time1:" << GpuPerformanceModel::EstimateRunTimeForInstruction(producer, &(cost_model_stats_.cost_analysis_), GpuPerformanceModelOptions::Default()).exec_time << std::endl;
+        // std::cout << "Flop_Count: "<<cost_model_stats_[0].cost_analysis_.flop_count() << std::endl;
+        // std::cout<< "Num_of_threads: "<<num_threads<<std::endl;
 
 //   EXPECT_TRUE(backend_config.has_reification_cost());
 //   EXPECT_GT(backend_config.reification_cost().end_to_end_cycles(), 0);
