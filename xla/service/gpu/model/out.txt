@@ -1,3 +1,4 @@
+2
 
 HloModule a_inference_function_52__.20, entry_computation_layout={(f32[100,10]{1,0}, f32[])->f32[100,5]{1,0}}
 
@@ -22,4 +23,35 @@ ENTRY %a_inference_function_52__.20 (arg0.1: f32[100,10], arg1.2: f32[]) -> f32[
   %tuple.18 = (f32[100,5]{1,0}) tuple(f32[100,5]{1,0} %reshape.17), metadata={op_name="XLA_Retvals"}
   ROOT %get-tuple-element.19 = f32[100,5]{1,0} get-tuple-element((f32[100,5]{1,0}) %tuple.18), index=0, metadata={op_name="XLA_Retvals"}
 }
+
+zkn
+
+HloModule a_inference_function_52__.20, entry_computation_layout={(f32[100,10]{1,0}, f32[])->f32[100,5]{1,0}}
+
+ENTRY %a_inference_function_52__.20 (arg0.1: f32[100,10], arg1.2: f32[]) -> f32[100,5] {
+  %arg1.2 = f32[] parameter(1), parameter_replication={false}, metadata={op_name="XLA_Args"}
+  %reshape.4 = f32[] reshape(f32[] %arg1.2)
+  %broadcast.9 = f32[100,5]{1,0} broadcast(f32[] %reshape.4), dimensions={}, metadata={op_type="Mul" op_name="model/tf.math.multiply/Mul" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %arg0.1 = f32[100,10]{1,0} parameter(0), parameter_replication={false}, metadata={op_name="XLA_Args"}
+  %reshape.3 = f32[100,10]{1,0} reshape(f32[100,10]{1,0} %arg0.1)
+  %reshape.5 = f32[100,10]{1,0} reshape(f32[100,10]{1,0} %reshape.3), metadata={op_type="Reshape" op_name="model/flatten/Reshape" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %constant.6 = f32[10,5]{1,0} constant({...}), metadata={op_type="MatMul" op_name="model/tf.linalg.matmul/MatMul" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %dot.7 = f32[100,5]{1,0} dot(f32[100,10]{1,0} %reshape.5, f32[10,5]{1,0} %constant.6), lhs_contracting_dims={1}, rhs_contracting_dims={0}, metadata={op_type="MatMul" op_name="model/tf.linalg.matmul/MatMul" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %transpose.8 = f32[100,5]{1,0} transpose(f32[100,5]{1,0} %dot.7), dimensions={0,1}, metadata={op_type="MatMul" op_name="model/tf.linalg.matmul/MatMul" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %multiply.10 = f32[100,5]{1,0} multiply(f32[100,5]{1,0} %broadcast.9, f32[100,5]{1,0} %transpose.8), metadata={op_type="Mul" op_name="model/tf.math.multiply/Mul" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %constant.11 = f32[5]{0} constant({-0.0185291208, 0.208150581, -0.0805791914, 0.1892941, 0.145280823}), metadata={op_type="AddV2" op_name="model/tf.__operators__.add/AddV2" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %broadcast.12 = f32[100,5]{1,0} broadcast(f32[5]{0} %constant.11), dimensions={1}, metadata={op_type="AddV2" op_name="model/tf.__operators__.add/AddV2" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %add.13 = f32[100,5]{1,0} add(f32[100,5]{1,0} %multiply.10, f32[100,5]{1,0} %broadcast.12), metadata={op_type="AddV2" op_name="model/tf.__operators__.add/AddV2" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %constant.14 = f32[] constant(0), metadata={op_type="Relu" op_name="model/output/Relu" source_file="/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/ops.py" source_line=1160}
+  %broadcast.15 = f32[100,5]{1,0} broadcast(f32[] %constant.14), dimensions={}, metadata={op_type="Relu" op_name="model/output/Relu"}
+  %maximum.16 = f32[100,5]{1,0} maximum(f32[100,5]{1,0} %add.13, f32[100,5]{1,0} %broadcast.15), metadata={op_type="Relu" op_name="model/output/Relu"}
+  %reshape.17 = f32[100,5]{1,0} reshape(f32[100,5]{1,0} %maximum.16), metadata={op_name="XLA_Retvals"}
+  %tuple.18 = (f32[100,5]{1,0}) tuple(f32[100,5]{1,0} %reshape.17), metadata={op_name="XLA_Retvals"}
+  ROOT %get-tuple-element.19 = f32[100,5]{1,0} get-tuple-element((f32[100,5]{1,0}) %tuple.18), index=0, metadata={op_name="XLA_Retvals"}
+}
+
+zkn
+
+
+
 

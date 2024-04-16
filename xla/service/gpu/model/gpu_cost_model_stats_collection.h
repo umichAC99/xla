@@ -38,6 +38,8 @@ class GpuCostModelStatsCollection : public HloModulePass {
       const GpuHloCostAnalysis::Options& cost_analysis_options)
       : device_info_(d), cost_analysis_(cost_analysis_options, &device_info_) {}
 
+//   explicit GpuCostModelStatsCollection(const GpuCostModelStatsCollection& copy) : device_info_(copy.device_info_), cost_analysis_(copy.cost_analysis_) {}
+
   absl::string_view name() const override {
     return "gpu_cost_model_stats_collection";
   }
