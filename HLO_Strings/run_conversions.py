@@ -13,8 +13,8 @@ def run_all_conversions(model, test_input):
     graph_modules = shard_model(model, ['input'], ['split1', 'split2'])  # can play with these values
 
     results = []
-    for gm in graph_modules:
-        hlo_string = graph2hlo(gm, test_input)
+    for layer in enumerate(self.model.layers):
+        hlo_string = graph2hlo(layer, test_input)
         results.append(hlo_string)
     return results
 

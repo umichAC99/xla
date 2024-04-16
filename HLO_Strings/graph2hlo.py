@@ -1,15 +1,16 @@
 import torch
-import torch.nn as nn
+#import torch.nn as nn
 from torch.fx import symbolic_trace
 import tensorflow as tf
 import os
 
-def graph2hlo(graphModule, testInput):
+def graph2hlo(graphModule): #removed the test input cause we need it on the real layers
     #1) create model.onnx
     # Specify the path to the ONNX file
     onnx_file_path = "model.onnx"
-    torch.onnx.export(graph_module,               # model being run
-                      testInput,               # model input (or a tuple for multiple inputs)
+    dummy_input = (torch.randn(1, 1024), torch.randn(1, 1024), torch.randn(1, 1024))  # fixed this hopefully
+    torch.onnx.export(graphModule,               # model being run
+                      dummy_input,               # model input (or a tuple for multiple inputs)
                       onnx_file_path,            # where to save the model
                       export_params=True,        # store the trained parameter weights inside the model file
                       opset_version=11,          # the ONNX version to export the model to
