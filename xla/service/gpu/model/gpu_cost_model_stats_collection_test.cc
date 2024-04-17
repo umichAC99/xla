@@ -37,6 +37,8 @@ limitations under the License.
 #include <sstream>
 #include <string>
 
+#include "xla/tools/xla_compile_lib.h"
+
 namespace xla {
 namespace gpu {
 
@@ -123,47 +125,49 @@ class GpuCostModelStatsCollectionTest : public HloTestBase {
 };
 
 TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
-    std::string base_path = "/xla/xla/service/gpu/model/out.txt";
-    std::ifstream file(base_path); // Open the file
-        if (!file.is_open()) {
-            std::cerr << "Failed to open the file." << std::endl;
-        }
-        std::string firstline;
-        std::getline(file,firstline);
-        int num_layers = std::stoi(firstline);
+    std::string base_path;
+    // std::ifstream file(base_path); // Open the file
+    //     if (!file.is_open()) {
+    //         std::cerr << "Failed to open the file." << std::endl;
+    //     }
+    //     std::string firstline;
+    //     std::getline(file,firstline);
+        int num_layers = 1;
         // file.close();
 
-    std::string layer_hlo_strings[num_layers];
+    // std::string layer_hlo_strings[num_layers];
 
-    // std::ifstream file1(base_path);
-    std::string line;
-    std::getline(file,line);
-    // std::getline(file1,line);
-    std::stringstream buffer;
-    int i = 0;
-    while(std::getline(file,line)){
-        if(line == "zkn"){
-            layer_hlo_strings[i] = buffer.str();
-            i = i + 1;
-            buffer.str("");
-        }
-        else{
-            buffer << line;
-        }
-    }
+    // // std::ifstream file1(base_path);
+    // std::string line;
+    // std::getline(file,line);
+    // // std::getline(file1,line);
+    // std::stringstream buffer;
+    // int i = 0;
+    // while(std::getline(file,line)){
+    //     if(line == "zkn"){
+    //         layer_hlo_strings[i] = buffer.str();
+    //         i = i + 1;
+    //         buffer.str("");
+    //     }
+    //     else{
+    //         buffer << line;
+    //     }
+    // }
     // std::cout << layer_hlo_strings[0] << std::endl;
-    file.close();
+    // file.close();
 
     base_path = "/xla/xla/service/gpu/model/layer_times.txt";
     std::ofstream output_file(base_path);
     
     output_file << device_names[0] + ":"<<std::endl;
     for(int i = 0; i<num_layers; i++){
-        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        auto module = LoadModule("/xla/xla/tools/data/add.hlo").value();
+        // auto module = LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir").value();
         EXPECT_FALSE(cost_model_stats_1.Run(module.get()).value());
         int warp_size = cost_model_stats_1.device_info_.threads_per_warp();
         int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
                                         GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
+        std::cout << "Flop_Count: "<<cost_model_stats_1.cost_analysis_.flop_count() << std::endl;
         absl::Duration duration = GpuPerformanceModelBase::ComputeTime(cost_model_stats_1.device_info_, cost_model_stats_1.cost_analysis_.flop_count(), num_threads);
         // double duration_double = absl::ToDoubleMicroseconds(duration);
         std::string durationString = absl::FormatDuration(duration);
@@ -174,12 +178,13 @@ TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
 
     output_file << device_names[1] + ":"<<std::endl;
     for(int i = 0; i<num_layers; i++){
-        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        auto module = LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir").value();
         EXPECT_FALSE(cost_model_stats_2.Run(module.get()).value());
         int warp_size = cost_model_stats_2.device_info_.threads_per_warp();
         int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
                                         GpuPerformanceWithCollectiveModel::kLL128NumThreads, 512);
         absl::Duration duration = GpuPerformanceModelBase::ComputeTime(cost_model_stats_2.device_info_, cost_model_stats_2.cost_analysis_.flop_count(), num_threads);
+        std::cout << "Flop_Count: "<<cost_model_stats_2.cost_analysis_.flop_count() << std::endl;
         std::string durationString = absl::FormatDuration(duration);
         output_file << durationString << std::endl;
     }
@@ -187,7 +192,7 @@ TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
     output_file <<"zkn"<<std::endl;
     output_file << device_names[2] + ":"<<std::endl;
     for(int i = 0; i<num_layers; i++){
-        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        auto module = LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir").value();
         EXPECT_FALSE(cost_model_stats_3.Run(module.get()).value());
         int warp_size = cost_model_stats_3.device_info_.threads_per_warp();
         int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
@@ -199,7 +204,7 @@ TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
     output_file <<"zkn"<<std::endl;
     output_file << device_names[3] + ":"<<std::endl;
     for(int i = 0; i<num_layers; i++){
-        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        auto module = LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir").value();
         EXPECT_FALSE(cost_model_stats_4.Run(module.get()).value());
         int warp_size = cost_model_stats_4.device_info_.threads_per_warp();
         int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
@@ -212,7 +217,7 @@ TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
     output_file <<"zkn"<<std::endl;
     output_file << device_names[4] + ":"<<std::endl;
     for(int i = 0; i<num_layers; i++){
-        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        auto module = LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir").value();
         EXPECT_FALSE(cost_model_stats_5.Run(module.get()).value());
         int warp_size = cost_model_stats_5.device_info_.threads_per_warp();
         int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
@@ -225,7 +230,7 @@ TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
     output_file <<"zkn"<<std::endl;
     output_file << device_names[5] + ":"<<std::endl;
     for(int i = 0; i<num_layers; i++){
-        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        auto module = LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir").value();
         EXPECT_FALSE(cost_model_stats_6.Run(module.get()).value());
         int warp_size = cost_model_stats_6.device_info_.threads_per_warp();
         int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
@@ -238,7 +243,7 @@ TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
     output_file <<"zkn"<<std::endl;
     output_file << device_names[6] + ":"<<std::endl;
     for(int i = 0; i<num_layers; i++){
-        TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(layer_hlo_strings[i]));
+        auto module = LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir").value();
         EXPECT_FALSE(cost_model_stats_7.Run(module.get()).value());
         int warp_size = cost_model_stats_7.device_info_.threads_per_warp();
         int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
