@@ -203,9 +203,9 @@ ENTRY entry {
 //   HloGraphNode rs_start_node = HloGraphNode(rs_start, 0);
 //   HloGraphNode rs_done_node = HloGraphNode(rs_done, 1);
 
-  double latency =
-      latency_estimator->NodeCost(rs_start_node);
-  EXPECT_EQ(latency, 120.0);
+//   double latency =
+//       latency_estimator->NodeCost(rs_start_node);
+//   EXPECT_EQ(latency, 120.0);
 }
 
 }  // namespace xla

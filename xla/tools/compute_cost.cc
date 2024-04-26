@@ -24,6 +24,7 @@ limitations under the License.
 #include "xla/service/hlo_cost_analysis.h"
 #include "xla/tools/hlo_module_loader.h"
 #include "tsl/platform/init_main.h"
+#include "xla/tools/xla_compile_lib.h"
 
 namespace {
 const char* const kUsage = R"(
@@ -40,23 +41,23 @@ Usage:
 
 int main(int argc, char** argv) {
   std::string input, format;
-  std::vector<tsl::Flag> flag_list = {
-      tsl::Flag("input", &input, "input file"),
-      tsl::Flag("format", &format, "hlo|pb|pbtxt")};
-  xla::AppendDebugOptionsFlags(&flag_list);
-  const std::string kUsageString =
-      absl::StrCat(kUsage, "\n\n", tsl::Flags::Usage(argv[0], flag_list));
-  bool parse_ok = tsl::Flags::Parse(&argc, argv, flag_list);
-  tsl::port::InitMain(kUsageString.c_str(), &argc, &argv);
-  if (!parse_ok) {
-    LOG(QFATAL) << kUsageString;
-  }
+  // std::vector<tsl::Flag> flag_list = {
+  //     tsl::Flag("input", &input, "input file"),
+  //     tsl::Flag("format", &format, "hlo|pb|pbtxt")};
+  input = "/xla/xla/tools/data/add.hlo";
+  // const std::string kUsageString =
+  //     absl::StrCat(kUsage, "\n\n", tsl::Flags::Usage(argv[0], flag_list));
+  // bool parse_ok = tsl::Flags::Parse(&argc, argv, flag_list);
+  // tsl::port::InitMain(kUsageString.c_str(), &argc, &argv);
+  // if (!parse_ok) {
+  //   LOG(QFATAL) << kUsageString;
+  // }
 
   xla::HloCostAnalysis analysis([](const xla::Shape& shape) {
     return xla::ShapeUtil::ByteSizeOf(shape, 8);
   });
 
-  TF_CHECK_OK(xla::LoadModuleFromFile(input, format, {})
+  TF_CHECK_OK(xla::LoadModule(input)
                   .value()
                   ->entry_computation()
                   ->root_instruction()

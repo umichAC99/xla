@@ -128,6 +128,8 @@ xla_cc_test(
     name = "gpu_cost_model_stats_collection_test",
     srcs = ["gpu_cost_model_stats_collection_test.cc"],
     deps = [
+        ":gpu_performance_model",
+        ":gpu_performance_model_base",
         ":gpu_collective_performance_model",
         ":gpu_cost_model_stats_collection",
         ":gpu_hlo_cost_analysis",
@@ -139,6 +141,7 @@ xla_cc_test(
         "//xla/tests:hlo_test_base",
         "//xla/tests:verified_hlo_module",
         "//xla/tests:xla_internal_test_main",
+        "//xla/tools:xla_compile_lib",
         "@com_google_googletest//:gtest",
         "@tsl//tsl/platform:statusor",
     ],

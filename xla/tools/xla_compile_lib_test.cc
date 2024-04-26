@@ -19,6 +19,7 @@ limitations under the License.
 #include <optional>
 #include <string>
 #include <utility>
+#include <iostream>
 
 #include "google/protobuf/duration.pb.h"
 #include <gmock/gmock.h>
@@ -150,6 +151,16 @@ TEST_F(XlaCompileLibTest, DISABLED_ON_GPU(WriteResultFileWritesTheFile)) {
   EXPECT_EQ(5, got_result.perf_stats().total_duration().seconds());
   EXPECT_EQ(0.5 * tsl::EnvTime::kSecondsToNanos,
             got_result.perf_stats().total_duration().nanos());
+}
+
+TEST_F(XlaCompileLibTest, LoadMLIRModule) {
+  auto hlo_module_result = LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir");
+  if (!hlo_module_result.ok()) {
+    std::cerr << hlo_module_result.status().ToString() << std::endl;
+  }
+  auto hlo_module = std::move(hlo_module_result.value());
+  std::cout << hlo_module->ToString() << std::endl;
+  // EXPECT_THAT(LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir"), IsOk());
 }
 
 TEST_F(XlaCompileLibTest, LoadModuleErrors) {

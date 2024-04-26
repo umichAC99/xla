@@ -659,6 +659,7 @@ xla_cc_binary(
     srcs = ["compute_cost.cc"],
     deps = [
         ":hlo_module_loader",
+        ":xla_compile_lib",
         "//xla/service:hlo_cost_analysis",
         "@tsl//tsl/platform:platform_port",
     ],

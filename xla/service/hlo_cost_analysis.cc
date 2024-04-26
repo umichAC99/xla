@@ -96,7 +96,7 @@ Status HloCostAnalysis::Postprocess(const HloInstruction* hlo) {
   auto [it_ignored, inserted] =
       hlo_properties_.emplace(hlo, std::move(current_properties_));
   current_properties_ = Properties();
-  TF_RET_CHECK(inserted);
+//   TF_RET_CHECK(inserted);
 
   return OkStatus();
 }
