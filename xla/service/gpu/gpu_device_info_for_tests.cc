@@ -26,9 +26,9 @@ stream_executor::DeviceDescription TestGpuDeviceInfo::RTXA6000DeviceInfo(
   b.set_gpu_compute_capability(cc);
   b.set_threads_per_block_limit(1024);
   b.set_threads_per_warp(32);
-  b.set_shared_memory_per_block(48 * 1024);
-  b.set_shared_memory_per_block_optin(99 * 1024);
-  b.set_shared_memory_per_core(100 * 1024);
+  b.set_shared_memory_per_block(49152);
+  b.set_shared_memory_per_block_optin(101376);
+  b.set_shared_memory_per_core(102400);
   b.set_threads_per_core_limit(1536);
   b.set_core_count(84);
   b.set_fpus_per_core(128);
@@ -37,7 +37,7 @@ stream_executor::DeviceDescription TestGpuDeviceInfo::RTXA6000DeviceInfo(
   b.set_block_dim_limit_z(65535);
   b.set_memory_bandwidth(768'096'000'000);
   b.set_l2_cache_size(6 * 1024 * 1024);
-  b.set_clock_rate_ghz(1.410);
+  b.set_clock_rate_ghz(1.8);
   b.set_device_memory_size(51'050'250'240);
   return b.BuildObject();
 }
