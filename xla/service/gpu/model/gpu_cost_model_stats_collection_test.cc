@@ -125,7 +125,7 @@ class GpuCostModelStatsCollectionTest : public HloTestBase {
 };
 
 TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
-    std::string base_path = "/xla/xla/service/gpu/model/results/num_layers.txt";
+    std::string base_path = "/workspace/xla/xla/service/gpu/model/results/num_layers.txt";
     std::ifstream file(base_path); // Open the file
         if (!file.is_open()) {
             std::cerr << "Failed to open the file." << std::endl;
@@ -135,8 +135,8 @@ TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
         int num_layers = std::stoi(firstline);
         file.close();
 
-    std::string output_base_path = "/xla/xla/service/gpu/model/results/layer_times.txt";
-    std::string layers_base_path = "/xla/xla/service/gpu/model/results/";
+    std::string output_base_path = "/workspace/xla/xla/service/gpu/model/results/layer_times.txt";
+    std::string layers_base_path = "/workspace/xla/xla/service/gpu/model/results/";
     std::ofstream output_file(output_base_path);
     for(int j =0; j<cost_model_stats_.size(); j++){
         output_file << device_names[j] + ":"<<std::endl;
@@ -146,7 +146,7 @@ TEST_F(GpuCostModelStatsCollectionTest, FusinInEntryComputation) {
             std::string layer_path = layers_base_path + "layer_" + layer_num +".mlir"; 
             // std::cout << layer_path << std::endl;
             auto module = LoadModule(layer_path).value();
-            // auto module = LoadModule("/xla/xla/tools/bert_tiny_stablehlo.mlir").value();
+            // auto module = LoadModule("/workspace/xla/xla/tools/bert_tiny_stablehlo.mlir").value();
             EXPECT_FALSE(cost_model_stats_[j]->Run(module.get()).value());
             int warp_size = cost_model_stats_[j]->device_info_.threads_per_warp();
             int num_threads = GetNumThreads(warp_size, GpuPerformanceWithCollectiveModel::kLL128NumThreads / 4,
